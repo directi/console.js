@@ -3,7 +3,7 @@ define([], function(){
     var allLogLevels = ['error','warn','info','log','debug'],
         layers = [],
         oldConsoleFns = {},
-        console = window.console || {};
+        console = self.console || {};
 
     console.logLayer = {};
 
