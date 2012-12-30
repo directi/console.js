@@ -9,6 +9,9 @@
     <script src="scripts/require.js"></script>
 </head>
 <body>
+<div id="console">
+
+</div>
 </body>
 <script>
     var logStore;
@@ -18,8 +21,13 @@
         var visiblePage = logStore.getVisiblePage();
         var pageView = new Views.LogPageView({collection: visiblePage});
         var navigation = new Views.NavigationControlView({model: logStore});
-        $("body").append(navigation.render().el);
-        $("body").append(pageView.render().el);
+        var header = new Views.HeaderView({model: logStore});
+        var container = $("<div></div>").addClass("log-page-container");
+        container.append(pageView.render().el);
+
+        $("#console").append(header.render().el);
+        $("#console").append(container);
+        $("#console").append(navigation.render().el);
     });
 </script>
 <script>

@@ -4,7 +4,7 @@ define([], function () {
         render:function () {
             var l = this.model.get('level'),
                 time = $("<td></td>").text(new Date(this.model.get('time')).toLocaleTimeString()).addClass('time'),
-                level = $("<td></td>").text(l.charAt(0)).addClass('level'),
+                level = $("<td></td>").text(' ').addClass('level'),
                 msg = $("<td></td>").text(this.model.get('msg')).addClass('message');
 
             this.$el.addClass("log-line " + l);

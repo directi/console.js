@@ -1,9 +1,10 @@
 define(
-    ["./LogPageView", "./LogRecordView", "./NavigationControlView"],
-    function (LogPageView, LogRecordView, NavigationControlView) {
+    ["./LogPageView", "./LogRecordView", "./NavigationControlView", "./HeaderView"],
+    function (LogPageView, LogRecordView, NavigationControlView, HeaderView) {
         return {
             LogRecordView:LogRecordView,
             LogPageView:LogPageView,
-            NavigationControlView:NavigationControlView
+            NavigationControlView:NavigationControlView,
+            HeaderView: HeaderView
         }
     });

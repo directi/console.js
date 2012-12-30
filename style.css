@@ -1,35 +1,86 @@
-.log-page {
+html, body, #console {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+.log-page-container {
+    height: calc(100% - 50px);
+    height: -webkit-calc(100% - 50px);
+    overflow: auto;
+}
+.navigation, .header {
+    height: 25px;
+    background: #ddd;
+    color: black;
+    font-family: Lucida Grande, sans-serif;
+    font-size: 11px;
+}
+.navigation {
+    border-top: 1px solid #CACACA;
+    padding-right: 40px;
+    text-align: right;
+    background-image: linear-gradient(#F3F3F3, #EBEBEB);
+    background-image: -webkit-linear-gradient(#F3F3F3, #EBEBEB);
+}
+.header {
+    background-image: linear-gradient(#EBEBEB, #F3F3F3);
+    background-image: -webkit-linear-gradient(#EBEBEB, #F3F3F3);
+    border-bottom: 1px solid #CACACA;
+}
 
+.log-page {
+    width: 100%;
 }
 .log-line {
     padding: 2px;
-    font-family: courier;
-    font-size: small;
+    font-size: 12px !important;
+    font-family: Consolas, Lucida Console, monospace;
     color: #333;
     white-space: nowrap;
     box-sizing: border-box;
     width: 100%;
     text-overflow: ellipsis;
 }
-
+.log-line td {
+    border-bottom: 1px solid #eee;
+}
+.log-line .level {
+    width: 5px;
+    max-width: 5px;
+}
+.log-line .time {
+    max-width: 75px;
+    width: 75px;
+    color: #aaa;
+    text-align: right;
+}
+.log-line .message {
+    padding-left: 4px;
+}
 .log-line.error {
     color: red;
 }
 .log-line.warn {
     color: orange;
 }
-.log-line.debug, .log-line.log {
+.log-line.debug {
     color: #aaa;
 }
-.navigation .button {
+.navigation .button, .header .entry {
     display: inline-block;
-    margin: 4px;
-    cursor: pointer;
+    margin: 0 4px;
     padding: 4px;
-    background: #ddd;
     color: black;
 }
-
+.navigation .button {
+    cursor: default;
+}
+.navigation .button:hover {
+    background: #bbb;
+    background-image: linear-gradient(#CCC, #DDD);
+    background-image: -webkit-linear-gradient(#CCC, #DDD);
+}
 .navigation .button.selected {
     background: #6699ff;
 }
