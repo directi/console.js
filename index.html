@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Console Log Viewer</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="scripts/deps/jquery-1.6.4.min.js"></script>
+    <script src="scripts/deps/underscore.js"></script>
+    <script src="scripts/deps/backbone.js"></script>
+    <script src="scripts/require.js"></script>
+</head>
+<body>
+</body>
+<script>
+    var logStore;
+    require(["scripts/viewer/LogStore", "scripts/viewer/Views"], function(LogStore, Views){
+        logStore = new LogStore("console", "logs");
+        logStore.prev();
+        var visiblePage = logStore.getVisiblePage();
+        var pageView = new Views.LogPageView({collection: visiblePage});
+        var navigation = new Views.NavigationControlView({model: logStore});
+        $("body").append(navigation.render().el);
+        $("body").append(pageView.render().el);
+    });
+</script>
+<script>
+</script>
+</html>

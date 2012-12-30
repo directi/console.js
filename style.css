@@ -1,0 +1,35 @@
+.log-page {
+
+}
+.log-line {
+    padding: 2px;
+    font-family: courier;
+    font-size: small;
+    color: #333;
+    white-space: nowrap;
+    box-sizing: border-box;
+    width: 100%;
+    text-overflow: ellipsis;
+}
+
+.log-line.error {
+    color: red;
+}
+.log-line.warn {
+    color: orange;
+}
+.log-line.debug, .log-line.log {
+    color: #aaa;
+}
+.navigation .button {
+    display: inline-block;
+    margin: 4px;
+    cursor: pointer;
+    padding: 4px;
+    background: #ddd;
+    color: black;
+}
+
+.navigation .button.selected {
+    background: #6699ff;
+}
