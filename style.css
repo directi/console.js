@@ -84,3 +84,9 @@ html, body, #console {
 .navigation .button.selected {
     background: #6699ff;
 }
+.navigation .search input {
+    height: 1em;
+    font-size: 11px;
+    font-family: Lucida Grande, sans-serif;
+    border: 1px solid #aaa;
+}

@@ -119,6 +119,10 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
             this.addFilter(this._levelFilter);
         },
         filterRegEx: function(pattern){
+            if(this._prevFilterPattern === pattern){
+                return;
+            }
+            this._prevFilterPattern = pattern;
             this.removeFilter(this._regExFilter);
             var re = new RegExp(pattern, "i");
             this._regExFilter = function(entry){

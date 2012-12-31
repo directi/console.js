@@ -8,16 +8,26 @@ define([], function () {
             "click .button": "changeSelection",
             "click .prev": "prev",
             "click .next": "next",
-            "click .stickToEnd": "toggleStickToEnd"
+            "click .stickToEnd": "toggleStickToEnd",
+            "change .search input": "search",
+            "blur .search input": "search",
+            "keypress .search input": function(e){
+                if(e.which === 13) {
+                    e.preventDefault();
+                    this.search();
+                }
+            }
         },
 
         render:function () {
             this.$el.addClass("navigation");
 
-            var prev = $("<div></div>").text('\u21e6').addClass('button prev'),
+            var search = $("<div><input type='text' name='search' width='20'></div>").addClass('button search'),
+                prev = $("<div></div>").text('\u21e6').addClass('button prev'),
                 next = $("<div></div>").text('\u21e8').addClass('button next'),
                 stickToEnd = $("<div></div>").text('End').addClass('button stickToEnd');
 
+            this.$el.append(search);
             this.$el.append(prev);
             this.$el.append(next);
             this.$el.append(stickToEnd);
@@ -51,6 +61,10 @@ define([], function () {
             this.isStickToEnd = false;
             this.model.stickToEnd(false);
             this.$(".button").removeClass('selected');
+        },
+        search: function(){
+            var pattern = this.$(".search input").val();
+            this.model.filterRegEx(pattern);
         }
     });
 });
