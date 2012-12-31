@@ -22,7 +22,7 @@ define([], function () {
         render:function () {
             this.$el.addClass("navigation");
 
-            var search = $("<div><input type='text' name='search' width='20'></div>").addClass('button search'),
+            var search = $("<div><input type='text' name='search' width='20'></div>").addClass('search').attr('title', 'Search with RegEx'),
                 prev = $("<div></div>").text('\u21e6').addClass('button prev'),
                 next = $("<div></div>").text('\u21e8').addClass('button next'),
                 stickToEnd = $("<div></div>").text('End').addClass('button stickToEnd');

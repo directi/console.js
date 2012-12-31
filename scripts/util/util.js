@@ -32,8 +32,8 @@ define(function () {
             });
         },
         isFired: function(def){
-            if(_.isFunction(def.isResolved)){
-                return def.isResolved() || def.isRejected();
+            if(_.isFunction(def.state)){
+                return def.state() !== 'pending';
             }
             return def.fired !== -1;
         },
