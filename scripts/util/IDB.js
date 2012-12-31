@@ -57,6 +57,10 @@ define(["./util"], function () {
     }
 
     Database.prototype._ensureLatestSchema = function () {
+        if(this._waitForVersionChange && !_.isFired(this._waitForVersionChange)){
+            return _.toPromise(this._waitForVersionChange);
+        }
+
         var deferred = _.DeferredWithTimeout(TIMEOUT, "Timeout: open database " + this.name);
 
         if(this._idbDatabse && this._idbDatabse.version === this.version){
@@ -64,15 +68,17 @@ define(["./util"], function () {
             return _.toPromise(deferred);
         }
 
+        this._waitForVersionChange = deferred;
+
         var request, idbDatabase, self=this,
             createSchemaCallback = _.bind(this.schemaCreator, this),
             useDatabaseCallback = function (e) {
                 idbDatabase = request.result || e.result || (e.target && e.target.result);
                 self._idbDatabse = idbDatabase;
-                deferred.resolve(idbDatabase);
+                !_.isFired(deferred) && deferred.resolve(idbDatabase);
             },
             errorCallback = function (e) {
-                deferred.reject(e);
+                !_.isFired(deferred) && deferred.reject(e);
             },
             blockedCallback = function (e) {
                 idbDatabase = request.result || e.result || (e.target && e.target.result);
