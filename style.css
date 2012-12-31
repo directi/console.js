@@ -67,7 +67,7 @@ html, body, #console {
 .log-line.debug {
     color: #aaa;
 }
-.navigation .button, .header .entry {
+.navigation .button, .header .entry, .navigation .search {
     display: inline-block;
     margin: 0 4px;
     padding: 4px;
