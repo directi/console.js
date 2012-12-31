@@ -26,6 +26,12 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
         return oldFirst.get('key') !== newFirstRecord.get('key') || oldLast.get('key') !== newLastRecord.get('key');
     }
 
+    function allFiltersAllow(filterFns, entry){
+        return !_(filterFns||[]).any(function(allow){
+            return !allow(entry);
+        });
+    }
+
     function LogStore(dbName, storeName) {
         this.dbName = dbName;
         this.storeName = storeName;
@@ -36,6 +42,7 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
         this._opQueue = new OpQueue(FETCH_TIMEOUT);
         this._db = IDB.getDatabase(dbName, schemaVersion, _.bind(createSchema, this, storeName));
         this._store = null;
+        this._filters = null;
         this.page = new LogPage();
     }
 
@@ -92,15 +99,45 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
                 this._scrollInterval = null;
             }
         },
-        addFilter:function (filter) {
-
+        addFilter:function (fn) {
+            this._filters = _(this._filters).union([fn]);
+            this._onFilterChange();
+        },
+        removeFilter: function(fn){
+            this._filters = _(this._filters).without(fn);
+            this._onFilterChange();
+        },
+        resetFilters: function(){
+            this._filters = [];
+            this._onFilterChange();
+        },
+        filterLevels: function(arr){
+            this.removeFilter(this._levelFilter);
+            this._levelFilter = function(entry){
+                return _(arr).contains(entry.value.level);
+            };
+            this.addFilter(this._levelFilter);
+        },
+        filterRegEx: function(pattern){
+            this.removeFilter(this._regExFilter);
+            var re = new RegExp(pattern, "i");
+            this._regExFilter = function(entry){
+                return re.test(entry.value.msg);
+            };
+            this.addFilter(this._regExFilter);
         }
     });
 
 
     _(LogStore.prototype).extend({
+        _onFilterChange: function(){
+            this._reset();
+            this.prev();
+        },
         _reset:function () {
             this.buffer.splice(0, this.buffer.length);
+            this.page.reset([]);
+            this.currentPageStart = 0;
         },
         _next:function () {
             var pSize = this.pageSize,
@@ -110,7 +147,7 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
                 def = $.Deferred(),
                 self = this;
 
-            function computePageStart() {
+            function computePageStart(change) {
                 self.currentPageStart = (cEnd + pSize < bSize) ? (cEnd + pSize) : ((bSize - pSize) > 0 ? (bSize - pSize) : 0);
                 def.resolve(self.currentPageStart);
             }
@@ -128,8 +165,8 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
                 def = $.Deferred(),
                 self = this;
 
-            function computePageStart(newRecordsAdded) {
-                var start = self.currentPageStart + newRecordsAdded.length,
+            function computePageStart(change) {
+                var start = self.currentPageStart + change.added,
                     newStart = start - pageSize;
 
                 if (newStart < 0) newStart = 0;
@@ -144,70 +181,60 @@ define(["../util/OpQueue", "./LogPage", "./LogRecord", "../util/IDB"], function 
             }
             return def.promise();
         },
-        _prevFromDB:function () {
+        _fetchFromDB: function(direction){
             var buffer = this.buffer,
-                first = _(buffer).first(),
-                startKey = first ? first.get('key') : undefined,
                 bufferSize = this.bufferSize,
                 pageSize = this.pageSize,
                 def = $.Deferred(),
                 reject = _.bind(def.reject, def),
+                resolve = _.bind(def.resolve, def),
                 getStore = this.store(),
-                process = function (dbRows) {
-                    var records;
-                    dbRows = _(dbRows).reverse();
-                    records = _(dbRows).map(dbToLogRecord);
+                filter = _.bind(allFiltersAllow, this, this._filters),
+                addToFront = function(records){
+                    records = _(records).reverse();
                     _(buffer).prepend(records);
                     _(buffer).trimTail(bufferSize);
-
-                    var first = _(buffer).first(), newKey;
-                    if (first) {
-                        newKey = first.get('key');
-                        console.log("Prev added " + dbRows.length + " records;");
-                        console.log("old start: " + startKey + " new start: " + newKey + " diff: " + (startKey - newKey));
-                    } else {
-                        console.log("No records");
-                    }
-                    def.resolve(records);
-                };
-
-            getStore.then(function (store) {
-                store.getNext('prevunique', pageSize, startKey).then(process, reject);
-            }, reject);
-
-            return def.promise();
-        },
-        _nextFromDB:function () {
-            var buffer = this.buffer,
-                last = _(buffer).last(),
-                startKey = last ? last.get('key') : undefined,
-                bufferSize = this.bufferSize,
-                pageSize = this.pageSize,
-                def = $.Deferred(),
-                reject = _.bind(def.reject, def),
-                getStore = this.store(),
-                process = function (dbRows) {
-                    var records;
-                    records = _(dbRows).map(dbToLogRecord);
+                },
+                addToTail = function(records){
                     _(buffer).append(records);
                     _(buffer).trimHead(bufferSize);
-
-                    var last = _(buffer).last(), newKey;
-
-                    if (last) {
-                        newKey = last.get('key');
-                        console.log("Next added " + dbRows.length + " records; ");
-                        console.log("old last: " + startKey + " new last: " + newKey + " diff: " + (newKey - startKey));
-                    } else {
-                        console.log("No records");
+                },
+                cntBeforeFilter=0,
+                cntAfterFilter= 0,
+                isBackward = direction.indexOf('prev') === 0,
+                getStartKey = function(){
+                    var record = isBackward?_(buffer).first():_(buffer).last();
+                    return record?record.get('key'):undefined;
+                },
+                process = function (dbRows) {
+                    var records,
+                        isLastPage = _(dbRows).size() < pageSize,
+                        lastFetchedKey = isLastPage?undefined:_(dbRows).last().key;
+                    cntBeforeFilter += _(dbRows).size();
+                    dbRows = _(dbRows).filter(filter);
+                    cntAfterFilter += _(dbRows).size();
+                    records = _(dbRows).map(dbToLogRecord);
+                    isBackward?addToFront(records):addToTail(records);
+                    console.log("Fetch: " + direction + ", retrieved: " + cntBeforeFilter + " added: " + cntAfterFilter);
+                    if(cntAfterFilter >= pageSize || isLastPage) {
+                        resolve({retrieved: cntBeforeFilter, added: cntAfterFilter});
+                        return;
                     }
-                    def.resolve(records);
+                    fetch(lastFetchedKey);
+                },
+                fetch = function(startKey){
+                    getStore.then(function (store) {
+                        store.getNext(direction, pageSize, startKey).then(process, reject);
+                    }, reject);
                 };
-
-            getStore.then(function (store) {
-                store.getNext('nextunique', pageSize, startKey).then(process, reject);
-            }, reject);
+            fetch(getStartKey());
             return def.promise();
+        },
+        _prevFromDB:function () {
+            return this._fetchFromDB('prevunique');
+        },
+        _nextFromDB:function () {
+            return this._fetchFromDB('nextunique');
         }
 
     });
