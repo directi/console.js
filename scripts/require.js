@@ -24,7 +24,6 @@ var requirejs, require, define;
         aps = ap.slice,
         apsp = ap.splice,
         isBrowser = !!(typeof window !== 'undefined' && navigator && document),
-        isWebWorker = !isBrowser && typeof importScripts !== 'undefined',
     //PS3 indicates loaded and complete, but need to wait for complete
     //specifically. Sequence is 'loading', 'loaded', execution,
     // then 'complete'. The UA check is unfortunate, but not sure how
@@ -683,7 +682,7 @@ var requirejs, require, define;
             if ((!expired || usingPathFallback) && stillLoading) {
                 //Something is still waiting to load. Wait for it, but only
                 //if a timeout is not already in effect.
-                if ((isBrowser || isWebWorker) && !checkLoadedTimeoutId) {
+                if ((isBrowser) && !checkLoadedTimeoutId) {
                     checkLoadedTimeoutId = setTimeout(function () {
                         checkLoadedTimeoutId = 0;
                         checkLoaded();
@@ -1838,17 +1837,6 @@ var requirejs, require, define;
             currentlyAddingScript = null;
 
             return node;
-        } else if (isWebWorker) {
-            //In a web worker, use importScripts. This is not a very
-            //efficient use of importScripts, importScripts will block until
-            //its script is downloaded and evaluated. However, if web workers
-            //are in play, the expectation that a build has been done so that
-            //only one script needs to be loaded anyway. This may need to be
-            //reevaluated if other use cases become common.
-            importScripts(url);
-
-            //Account for anonymous modules
-            context.completeLoad(moduleName);
         }
     };
 
